@@ -2,8 +2,7 @@ require('@nomicfoundation/hardhat-toolbox');
 require('@openzeppelin/hardhat-upgrades');
 require('@nomicfoundation/hardhat-verify');
 require('@openzeppelin/hardhat-upgrades');
-const PRIVATE_KEY =
-  '8965f0ea9c8def4809f0004e158e763125002fe6432a66368e3677fcf47e87a2';
+const PRIVATE_KEY = '';
 module.exports = {
   networks: {
     baseSepolia: {
