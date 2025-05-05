@@ -17,7 +17,7 @@ const verify = async (contractAddress, args) => {
 };
 
 async function deployUpgradeableContract() {
-  const args = ['0xEEdBBafD2640bd3B2141b023C8d3c76a45a5b127', 1];
+  const args = ['0xEEdBBafD2640bd3B2141b023C8d3c76a45a5b127', 50, 50];
 
   const MyContract = await ethers.getContractFactory('NFTsAlleyNFTMarket');
 

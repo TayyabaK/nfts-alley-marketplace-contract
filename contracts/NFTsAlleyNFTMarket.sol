@@ -633,9 +633,16 @@ contract NFTsAlleyNFTMarket is
         emit MaxBatchSizeUpdated(newMaxBatchSize);
     }
 
+    function setMarketplaceFeeBp(uint256 newMarketplaceFeeBp) external onlyMultiSig {
+        // e.g. enforce a reasonable upper bound (25%)
+        require(newMarketplaceFeeBp <= 2500, "Fee too high");
+        marketplaceFeeBp = newMarketplaceFeeBp;
+        emit MarketplaceFeeBpUpdated(newMarketplaceFeeBp);
+    }
+
     // Required override for ERC1155Receiver
     function onERC1155Received(
-        address operator,
+        address operator, 
         address from,
         uint256 id,
         uint256 value,

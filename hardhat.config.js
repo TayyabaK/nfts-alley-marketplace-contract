@@ -2,8 +2,9 @@ require('@nomicfoundation/hardhat-toolbox');
 require('@openzeppelin/hardhat-upgrades');
 require('@nomicfoundation/hardhat-verify');
 require('@openzeppelin/hardhat-upgrades');
-const PRIVATE_KEY =
-  '8965f0ea9c8def4809f0004e158e763125002fe6432a66368e3677fcf47e87a2';
+require('dotenv').config();
+
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 module.exports = {
   networks: {
     baseSepolia: {
@@ -28,8 +29,8 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      baseSepolia: '25M5QI5HSPF4CQ5E5Y3UVSRUVWSYKT261R',
-      // sepolia: '9K1QHBE9TJZEWCTA2CAC3YMEXGIRXKD2RK',
+      // baseSepolia: '25M5QI5HSPF4CQ5E5Y3UVSRUVWSYKT261R',
+      sepolia: '9K1QHBE9TJZEWCTA2CAC3YMEXGIRXKD2RK',
       // holesky: 'NIICVA1QW91C8MK9APDPEX29PHEFQHREXF',
     },
   },

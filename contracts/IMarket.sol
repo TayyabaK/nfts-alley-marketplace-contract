@@ -80,7 +80,7 @@ interface IMarket {
     );
     event FeeUpdated(uint256 feeAmount, address indexed feeWallet);
     event TransferFailed(address royaltiesReceiver, uint256 royaltiesAmount);
-
+    event MarketplaceFeeBpUpdated(uint256 newMarketplaceFeeBp);
     
     // Emitted when the fee collector address is updated
     event FeeCollectorUpdated(address indexed newFeeCollector);

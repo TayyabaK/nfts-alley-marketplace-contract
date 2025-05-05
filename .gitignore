@@ -2,3 +2,4 @@ node_modules
 .openzeppelin
 artifacts
 cache
+.env
