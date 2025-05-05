@@ -11,7 +11,6 @@ interface IMarket {
         uint256 createdAt; //offer stay valid for 1 year
         uint256 status; // 1 = active, 2 = accepted, 3 = cancelled
     }
-
     struct MarketItem {
         uint256 itemId;
         address nftContract;
@@ -29,7 +28,8 @@ interface IMarket {
         address indexed nftContract,
         uint256 indexed tokenId,
         address owner,
-        uint256 price
+        uint256 price,
+        uint256 dollarAmount
     );
 
     event MarketItemReleased(
@@ -38,6 +38,7 @@ interface IMarket {
         uint256 indexed tokenId,
         address seller
     );
+
     event MarketItemCreated(
         uint256 indexed itemId,
         address indexed nftContract,
@@ -46,7 +47,7 @@ interface IMarket {
         address owner,
         uint256 price,
         bool sold,
-        uint256 createdAt,        
+        uint256 createdAt,
         string nftJson
     );
 
@@ -60,13 +61,15 @@ interface IMarket {
         uint256 tokenId,
         uint256 createdAt
     );
+
     event OfferAccepted(
         address indexed owner,
         uint256 nftID,
         address indexed offeror,
         uint256 amount,
         address nftContract,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256 dollarAmount
     );
     event OfferCancelled(
         uint256 nftID,
@@ -78,23 +81,38 @@ interface IMarket {
     event FeeUpdated(uint256 feeAmount, address indexed feeWallet);
     event TransferFailed(address royaltiesReceiver, uint256 royaltiesAmount);
 
+    
+    // Emitted when the fee collector address is updated
+    event FeeCollectorUpdated(address indexed newFeeCollector);
+
+    // Emitted when the max batch size is updated
+    event MaxBatchSizeUpdated(uint256 newMaxBatchSize);
+
     event MultiSigWalletUpdated(address multiSigWallet);
 
     function createMarketItem(
         address nftContract,
         uint256 tokenId,
-        uint256 price
+        uint256 price,
+        string memory nftJson
     ) external;
 
     function makeOffer(uint256 itemId) external payable;
 
     function cancelOffer(uint256 itemId) external;
 
-    function acceptOffer(uint256 itemId, address offeror) external;
+    function acceptOffer(
+        uint256 itemId,
+        address offeror,
+        uint256 dollarAmount
+    ) external;
 
     function releaseSale(uint256 itemId) external;
 
-    function createMarketSale(uint256 itemId) external payable;
+    function createMarketSale(
+        uint256 itemId,
+        uint256 dollarAmount
+    ) external payable;
 
     function fetchMarketItems() external view returns (MarketItem[] memory);
 

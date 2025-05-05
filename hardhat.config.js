@@ -2,12 +2,15 @@ require('@nomicfoundation/hardhat-toolbox');
 require('@openzeppelin/hardhat-upgrades');
 require('@nomicfoundation/hardhat-verify');
 require('@openzeppelin/hardhat-upgrades');
-const PRIVATE_KEY = '';
+const PRIVATE_KEY =
+  '8965f0ea9c8def4809f0004e158e763125002fe6432a66368e3677fcf47e87a2';
 module.exports = {
   networks: {
     baseSepolia: {
-      url: 'https://base-sepolia.drpc.org',
+      chainId: 84532,
+      url: 'https://sepolia.base.org',
       accounts: [`0x${PRIVATE_KEY}`],
+      timeout: 300_000, // 5 minutes
     },
     holesky: {
       chainId: 17000,
@@ -25,8 +28,8 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      // baseSepolia: "25M5QI5HSPF4CQ5E5Y3UVSRUVWSYKT261R",
-      sepolia: '9K1QHBE9TJZEWCTA2CAC3YMEXGIRXKD2RK',
+      baseSepolia: '25M5QI5HSPF4CQ5E5Y3UVSRUVWSYKT261R',
+      // sepolia: '9K1QHBE9TJZEWCTA2CAC3YMEXGIRXKD2RK',
       // holesky: 'NIICVA1QW91C8MK9APDPEX29PHEFQHREXF',
     },
   },

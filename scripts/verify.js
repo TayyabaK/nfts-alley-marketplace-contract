@@ -10,7 +10,7 @@ async function verifyContract() {
   // console.log(`Deployed!`);
   // console.log(`Simple Storage Address: ${nft.address}`);
 
-  await verify('0xb84AAb9437D4596ed14bF66F287ad96172a9aE68', args);
+  await verify('0x85fc1F3d7FB68Dd7E636d818d419051a3DFfbE9d', args);
 }
 const verify = async (contractAddress, args) => {
   console.log('Verifying contract...');

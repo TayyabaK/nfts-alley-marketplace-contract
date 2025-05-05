@@ -34,6 +34,8 @@ contract NFTsAlleyNFTMarket is
     address public multiSigWallet;
 
     bytes4 private constant INTERFACE_ID_ERC2981 = 0x2a55205a;
+    uint256 public maxBatchSize;
+
 
     mapping(address => address) public royalityAddresses;
     mapping(uint256 => MarketItem) public idToMarketItem;
@@ -47,16 +49,19 @@ contract NFTsAlleyNFTMarket is
     }
 
     function initialize(
-        address feeCollectorWallet,
-        uint256 marketplaceFeeBasisPoint
+    address feeCollectorWallet,
+    uint256 marketplaceFeeBasisPoint,
+    uint256 initialMaxBatchSize    // ← NEW parameter
     ) public initializer {
         require(feeCollectorWallet != address(0), "Invalid address");
         __Ownable_init(msg.sender);
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
         __Pausable_init();
-        feeCollector = feeCollectorWallet;
-        marketplaceFeeBp = marketplaceFeeBasisPoint;
+
+        feeCollector      = feeCollectorWallet;
+        marketplaceFeeBp  = marketplaceFeeBasisPoint;
+        maxBatchSize      = initialMaxBatchSize;   // ← initialize cap
     }
 
     function _authorizeUpgrade(
@@ -209,6 +214,61 @@ contract NFTsAlleyNFTMarket is
         );
     }
 
+    function createMarketItems(
+        address nftContract,
+        uint256[] calldata tokenIds,
+        uint256[] calldata prices,
+        string[]   calldata nftJsons
+    )
+        external
+        nonReentrant
+        whenNotPaused
+        checkInterfaceSupport(nftContract)
+    {
+        uint256 count = tokenIds.length;
+
+        // ← enforce new cap
+        require(count > 1 && count <= maxBatchSize, "Batch size out of range");
+        require(count == prices.length && count == nftJsons.length, "Array length mismatch");
+        require(feeCollector != address(0), "Fee collector not set");
+
+        for (uint256 i = 0; i < count; i++) {
+            uint256 tokenId = tokenIds[i];
+            uint256 price   = prices[i];
+            require(price > 0, "Price must be > 0");
+
+            itemIds++;
+            uint256 itemId = itemIds;
+
+            idToMarketItem[itemId] = MarketItem(
+                itemId,
+                nftContract,
+                tokenId,
+                payable(msg.sender),
+                payable(address(0)),
+                price,
+                1
+            );
+
+            nftContractTokenIdToItemId[nftContract][tokenId].add(itemId);
+            transferNft(msg.sender, address(this), tokenId, nftContract);
+
+            emit MarketItemCreated(
+                itemId,
+                nftContract,
+                tokenId,
+                msg.sender,
+                address(0),
+                price,
+                false,
+                block.timestamp,
+                nftJsons[i]
+            );
+        }
+    }
+
+
+
     function makeOffer(
         uint256 itemId
     ) external payable nonReentrant whenNotPaused {
@@ -259,6 +319,7 @@ contract NFTsAlleyNFTMarket is
             "cancelOffer: not offeror Address"
         );
         require(offer.status != 2, "cancelOffer: offer already accepted");
+        require(offer.status != 3, "cancelOffer: offer already cancelled");
 
         require(
             address(this).balance >= offer.offerPrice,
@@ -282,7 +343,8 @@ contract NFTsAlleyNFTMarket is
 
     function acceptOffer(
         uint256 itemId,
-        address offeror
+        address offeror,
+        uint256 dollarAmount
     ) public nonReentrant whenNotPaused {
         require(offeror != address(0), "Invalid address");
         OfferData memory offer = offers[itemId][offeror];
@@ -342,7 +404,8 @@ contract NFTsAlleyNFTMarket is
             offeror,
             offer.offerPrice,
             idToMarketItem[itemId].nftContract,
-            idToMarketItem[itemId].tokenId
+            idToMarketItem[itemId].tokenId,
+            dollarAmount
         );
     }
 
@@ -368,7 +431,8 @@ contract NFTsAlleyNFTMarket is
     }
 
     function createMarketSale(
-        uint256 itemId
+        uint256 itemId,
+        uint256 dollarAmount
     ) external payable nonReentrant whenNotPaused {
         uint256 price = idToMarketItem[itemId].price;
         uint256 tokenId = idToMarketItem[itemId].tokenId;
@@ -401,7 +465,14 @@ contract NFTsAlleyNFTMarket is
         }
         transferNft(address(this), msg.sender, tokenId, nftContract);
 
-        emit MarketItemSale(itemId, nftContract, tokenId, msg.sender, price);
+        emit MarketItemSale(
+            itemId,
+            nftContract,
+            tokenId,
+            msg.sender,
+            price,
+            dollarAmount
+        );
     }
 
     function fetchMarketItems() public view returns (MarketItem[] memory) {
@@ -472,15 +543,14 @@ contract NFTsAlleyNFTMarket is
     }
 
     function setSaleFeeBpAndWallet(
-        uint256 saleFee,
-        address feeCollector
-    ) external onlyMultiSig {
-        require(feeCollector != address(0), "Invalid fee collector address");
-        require(saleFee <= 2500, "Too much sale fee");
-        marketplaceFeeBp = saleFee;
-
-        feeCollector = feeCollector;
-        emit FeeUpdated(saleFee, feeCollector);
+        uint256 _saleFee,
+        address _feeCollector
+    ) external override onlyMultiSig {
+        require(_feeCollector != address(0), "Invalid fee collector address");
+        require(_saleFee <= 2500, "Too much sale fee");
+        marketplaceFeeBp = _saleFee;
+        feeCollector = _feeCollector;
+        emit FeeUpdated(_saleFee, _feeCollector);
     }
 
     function setRoyalityAddresses(
@@ -490,10 +560,10 @@ contract NFTsAlleyNFTMarket is
         royalityAddresses[nftContract] = royalityAddress;
     }
 
-    function setMultiSigWallet(address multiSigWallet) external onlyOwner {
-        require(multiSigWallet != address(0), "Invalid address");
-        multiSigWallet = multiSigWallet;
-        emit MultiSigWalletUpdated(multiSigWallet);
+    function setMultiSigWallet(address newMultiSigWallet) external onlyOwner {
+        require(newMultiSigWallet != address(0), "Invalid address");
+        multiSigWallet = newMultiSigWallet; // ✅ Fixed
+        emit MultiSigWalletUpdated(newMultiSigWallet);
     }
 
     function withdrawETH() external onlyMultiSig nonReentrant {
@@ -543,10 +613,24 @@ contract NFTsAlleyNFTMarket is
         MarketItem[] memory marketItemsArray = new MarketItem[](length);
 
         for (uint256 i = 0; i < length; i++) {
-            marketItemsArray[i] = idToMarketItem[i + 1];
+            marketItemsArray[i] = idToMarketItem[
+                nftContractTokenIdToItemId[nftContract][tokenId].at(i)
+            ];
         }
 
         return marketItemsArray;
+    }
+
+    function setFeeCollector(address newFeeCollector) external onlyMultiSig {
+        require(newFeeCollector != address(0), "Invalid fee collector");
+        feeCollector = newFeeCollector;
+        emit FeeCollectorUpdated(newFeeCollector);
+    }
+
+    function setMaxBatchSize(uint256 newMaxBatchSize) external onlyOwner {
+        require(newMaxBatchSize > 1, "Batch size must be > 1");
+        maxBatchSize = newMaxBatchSize;
+        emit MaxBatchSizeUpdated(newMaxBatchSize);
     }
 
     // Required override for ERC1155Receiver
@@ -595,10 +679,4 @@ contract NFTsAlleyNFTMarket is
         (bool success, ) = recipient.call{value: amount}("");
         return success;
     }
-
-    function createMarketItem(
-        address nftContract,
-        uint256 tokenId,
-        uint256 price
-    ) external override {}
 }
