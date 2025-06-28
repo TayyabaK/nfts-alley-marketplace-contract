@@ -5,11 +5,14 @@ require('@openzeppelin/hardhat-upgrades');
 require('dotenv').config();
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const SEPOLIA_ALCHEMY_URL = process.env.ALCHEMY_SEPOLIA_URL;
+const BASE_SEPOLIA_ALCHEMY_URL = process.env.ALCHEMY_BASE_SEPOLIA_URL;
+
 module.exports = {
   networks: {
     baseSepolia: {
       chainId: 84532,
-      url: 'https://sepolia.base.org',
+      url: BASE_SEPOLIA_ALCHEMY_URL,
       accounts: [`0x${PRIVATE_KEY}`],
       timeout: 300_000, // 5 minutes
     },
@@ -20,7 +23,7 @@ module.exports = {
     },
     sepolia: {
       chainId: 11155111,
-      url: 'https://sepolia.drpc.org',
+      url: SEPOLIA_ALCHEMY_URL,
       accounts: [`0x${PRIVATE_KEY}`],
     },
     hardhat: {
@@ -29,7 +32,7 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      // baseSepolia: '25M5QI5HSPF4CQ5E5Y3UVSRUVWSYKT261R',
+      baseSepolia: '25M5QI5HSPF4CQ5E5Y3UVSRUVWSYKT261R',
       sepolia: '9K1QHBE9TJZEWCTA2CAC3YMEXGIRXKD2RK',
       // holesky: 'NIICVA1QW91C8MK9APDPEX29PHEFQHREXF',
     },
